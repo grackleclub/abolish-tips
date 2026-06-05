@@ -1,37 +1,31 @@
 name: Release
 
+# Release runs only after the Test workflow completes — never in
+# parallel with it. The job guard below requires that run to have
+# succeeded on main, so a release is impossible unless tests pass.
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    workflows: [ "Test" ]
+    types: [ completed ]
 
 permissions:
   contents: write
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Test
-        run: go test -race ./...
-
   release:
-    needs: test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Release the exact commit that Test validated (empty on
+          # manual dispatch, which falls back to the default branch).
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
