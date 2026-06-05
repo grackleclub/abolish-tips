@@ -1,0 +1,8 @@
+# compiled binary (named after the module/dir)
+/abolish-tips
+
+# release build output
+/dist/
+
+# gitignored plan notes
+/plan.md
